@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinTrack - Reports</title>
+  <link rel="stylesheet" href="dashboard-styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+  <script src="data-manager.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <h2>FinTrack</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="dashboard.html">Overview</a>
+          </li>
+          <li>
+            <a href="transactions.html">Transactions</a>
+          </li>
+          <li>
+            <a href="budgets.html">Budgets</a>
+          </li>
+          <li>
+            <a href="goals.html">Goals</a>
+          </li>
+          <li class="active">
+            <a href="reports.html">Reports</a>
+          </li>
+          <li>
+            <a href="settings.html">Settings</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="user-info">
+        <div class="user-avatar" onclick="window.location.href='profile.html'">
+          <img src="/placeholder.svg?height=40&width=40" alt="User Avatar" id="user-avatar-small">
+        </div>
+        <div class="user-details">
+          <p class="user-name" id="user-name-sidebar"></p>
+          <a href="index.html" class="logout-link">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation -->
+      <header class="top-nav">
+        <div class="mobile-toggle" onclick="toggleSidebar()">
+          <span>☰</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" placeholder="Search reports...">
+        </div>
+        <div class="top-nav-actions">
+          <a href="notifications.html" class="btn-icon">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge" id="notification-count"></span>
+          </a>
+          <a href="profile.html" class="btn-icon">
+            <span class="profile-icon">👤</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Reports Content -->
+      <div class="dashboard-content">
+        <h1>Financial Reports</h1>
+        
+        <div class="action-bar">
+          <div class="filter-options">
+            <select id="report-type" onchange="changeReportType()">
+              <option value="spending">Spending by Category</option>
+              <option value="income">Income vs Expenses</option>
+              <option value="savings">Savings Rate</option>
+            </select>
+            <select id="report-period" onchange="changeReportPeriod()">
+              <option value="month">This Month</option>
+              <option value="quarter">This Quarter</option>
+              <option value="year">This Year</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          <button class="export-btn" onclick="exportReport()">Export Report</button>
+        </div>
+        
+        <div class="report-container">
+          <div class="chart-container">
+            <h2 id="report-title">Spending by Category - This Month</h2>
+            <canvas id="reportChart"></canvas>
+          </div>
+          
+          <div class="report-summary" id="report-summary">
+            <!-- Report summary will be loaded dynamically -->
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Global variables
+    let reportChart = null;
+
+    // Load user data
+    function loadUserData() {
+      const user = DataManager.getUser();
+      document.getElementById('user-name-sidebar').textContent = user.name;
+      document.getElementById('user-avatar-small').src = user.avatar;
+    }
+
+    // Load report data
+    function loadReportData() {
+      const reportType = document.getElementById('report-type').value;
+      const reportPeriod = document.getElementById('report-period').value;
+      
+      // Update report title
+      updateReportTitle();
+      
+      // Generate report summary
+      generateReportSummary();
+      
+      // Initialize chart
+      initReportChart();
+    }
+
+    // Update report title
+    function updateReportTitle() {
+      const reportType = document.getElementById('report-type').value;
+      const reportPeriod = document.getElementById('report-period').value;
+      
+      let typeText = '';
+      switch (reportType) {
+        case 'spending':
+          typeText = 'Spending by Category';
+          break;
+        case 'income':
+          typeText = 'Income vs Expenses';
+          break;
+        case 'savings':
+          typeText = 'Savings Rate';
+          break;
+      }
+      
+      let periodText = '';
+      switch (reportPeriod) {
+        case 'month':
+          periodText = 'This Month';
+          break;
+        case 'quarter':
+          periodText = 'This Quarter';
+          break;
+        case 'year':
+          periodText = 'This Year';
+          break;
+        case 'custom':
+          periodText = 'Custom Range';
+          break;
+      }
+      
+      document.getElementById('report-title').textContent = `${typeText} - ${periodText}`;
+    }
+
+    // Generate report summary
+    function generateReportSummary() {
+      const summary = DataManager.getFinancialSummary();
+      const reportSummary = document.getElementById('report-summary');
+      
+      reportSummary.innerHTML = `
+        <h3>Summary</h3>
+        <div class="summary-item">
+          <span class="summary-label">Total Income:</span>
+          <span class="summary-value">${DataManager.formatCurrency(summary.income)}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Total Expenses:</span>
+          <span class="summary-value">${DataManager.formatCurrency(summary.expenses)}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Net Savings:</span>
+          <span class="summary-value">${DataManager.formatCurrency(summary.savings)}</span>
+        </div>
+        <div class="summary-item">
+          <span class="summary-label">Savings Rate:</span>
+          <span class="summary-value">${Math.round((summary.savings / summary.income) * 100)}%</span>
+        </div>
+      `;
+      
+      // Add largest expense category if available
+      const transactions = DataManager.getTransactions();
+      if (transactions.length > 0) {
+        // Group expenses by category
+        const expensesByCategory = {};
+        
+        transactions.forEach(transaction => {
+          if (transaction.amount < 0) {
+            const category = transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1);
+            if (!expensesByCategory[category]) {
+              expensesByCategory[category] = 0;
+            }
+            expensesByCategory[category] += Math.abs(transaction.amount);
+          }
+        });
+        
+        // Find largest expense category
+        let largestCategory = '';
+        let largestAmount = 0;
+        
+        for (const category in expensesByCategory) {
+          if (expensesByCategory[category] > largestAmount) {
+            largestCategory = category;
+            largestAmount = expensesByCategory[category];
+          }
+        }
+        
+        if (largestCategory) {
+          const largestExpenseItem = document.createElement('div');
+          largestExpenseItem.className = 'summary-item';
+          largestExpenseItem.innerHTML = `
+            <span class="summary-label">Largest Expense:</span>
+            <span class="summary-value">${largestCategory} (${DataManager.formatCurrency(largestAmount)})</span>
+          `;
+          
+          reportSummary.appendChild(largestExpenseItem);
+        }
+      }
+    }
+
+    // Initialize report chart
+    function initReportChart() {
+      const ctx = document.getElementById('reportChart').getContext('2d');
+      const reportType = document.getElementById('report-type').value;
+      
+      // Destroy previous chart if exists
+      if (reportChart) {
+        reportChart.destroy();
+      }
+      
+      // Get transactions
+      const transactions = DataManager.getTransactions();
+      
+      // Create chart based on report type
+      switch (reportType) {
+        case 'spending':
+          createSpendingChart(ctx, transactions);
+          break;
+        case 'income':
+          createIncomeVsExpensesChart(ctx, transactions);
+          break;
+        case 'savings':
+          createSavingsRateChart(ctx, transactions);
+          break;
+      }
+    }
+
+    // Create spending by category chart
+    function createSpendingChart(ctx, transactions) {
+      // Group expenses by category
+      const expensesByCategory = {};
+      
+      transactions.forEach(transaction => {
+        if (transaction.amount < 0) {
+          const category = transaction.category.charAt(0).toUpperCase() + transaction.category.slice(1);
+          if (!expensesByCategory[category]) {
+            expensesByCategory[category] = 0;
+          }
+          expensesByCategory[category] += Math.abs(transaction.amount);
+        }
+      });
+      
+      // Prepare data for chart
+      const categories = Object.keys(expensesByCategory);
+      const amounts = categories.map(category => expensesByCategory[category]);
+      
+      // Colors for categories
+      const colors = [
+        '#ffeaa7', // Food
+        '#fab1a0', // Shopping
+        '#81ecec', // Transport
+        '#a29bfe', // Entertainment
+        '#74b9ff', // Utilities
+        '#55efc4', // Health
+        '#b2bec3'  // Other
+      ];
+      
+      // Create chart
+      reportChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: categories,
+          datasets: [{
+            data: amounts,
+            backgroundColor: colors.slice(0, categories.length)
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          legend: {
+            position: 'right'
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem, data) {
+                const value = data.datasets[0].data[tooltipItem.index];
+                return data.labels[tooltipItem.index] + ': ' + DataManager.formatCurrency(value);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Create income vs expenses chart
+    function createIncomeVsExpensesChart(ctx, transactions) {
+      // Group transactions by month
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const incomeByMonth = Array(12).fill(0);
+      const expensesByMonth = Array(12).fill(0);
+      
+      transactions.forEach(transaction => {
+        const date = new Date(transaction.date);
+        const month = date.getMonth();
+        
+        if (transaction.amount > 0) {
+          incomeByMonth[month] += transaction.amount;
+        } else {
+          expensesByMonth[month] += Math.abs(transaction.amount);
+        }
+      });
+      
+      // Create chart
+      reportChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Income',
+            backgroundColor: '#27ae60',
+            data: incomeByMonth
+          }, {
+            label: 'Expenses',
+            backgroundColor: '#e74c3c',
+            data: expensesByMonth
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true,
+                callback: function(value) {
+                  return DataManager.formatCurrency(value);
+                }
+              }
+            }]
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem, data) {
+                const label = data.datasets[tooltipItem.datasetIndex].label || '';
+                const value = tooltipItem.yLabel;
+                return label + ': ' + DataManager.formatCurrency(value);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Create savings rate chart
+    function createSavingsRateChart(ctx, transactions) {
+      // Group transactions by month
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const incomeByMonth = Array(12).fill(0);
+      const expensesByMonth = Array(12).fill(0);
+      
+      transactions.forEach(transaction => {
+        const date = new Date(transaction.date);
+        const month = date.getMonth();
+        
+        if (transaction.amount > 0) {
+          incomeByMonth[month] += transaction.amount;
+        } else {
+          expensesByMonth[month] += Math.abs(transaction.amount);
+        }
+      });
+      
+      // Calculate savings rate
+      const savingsRateByMonth = incomeByMonth.map((income, index) => {
+        if (income === 0) return 0;
+        const expenses = expensesByMonth[index];
+        return Math.round(((income - expenses) / income) * 100);
+      });
+      
+      // Create chart
+      reportChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Savings Rate (%)',
+            borderColor: '#3498db',
+            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+            data: savingsRateByMonth
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true,
+                callback: function(value) {
+                  return value + '%';
+                }
+              }
+            }]
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem, data) {
+                const label = data.datasets[tooltipItem.datasetIndex].label || '';
+                const value = tooltipItem.yLabel;
+                return label + ': ' + value + '%';
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Change report type
+    function changeReportType() {
+      loadReportData();
+    }
+
+    // Change report period
+    function changeReportPeriod() {
+      loadReportData();
+    }
+
+    // Export report
+    function exportReport() {
+      alert('Report exported! (This would download a PDF or CSV in a real app)');
+    }
+
+    // Load notification count
+    function loadNotificationCount() {
+      const notifications = DataManager.getNotifications();
+      const unreadCount = notifications.filter(n => !n.read).length;
+      
+      const notificationCountElement = document.getElementById('notification-count');
+      
+      if (unreadCount > 0) {
+        notificationCountElement.textContent = unreadCount;
+        notificationCountElement.style.display = 'flex';
+      } else {
+        notificationCountElement.style.display = 'none';
+      }
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUserData();
+      loadReportData();
+      loadNotificationCount();
+    });
+  </script>
+</body>
+</html>
+

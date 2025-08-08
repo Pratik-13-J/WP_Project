@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinTrack - Profile</title>
+  <link rel="stylesheet" href="dashboard-styles.css">
+  <script src="data-manager.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <h2>FinTrack</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="dashboard.html">Overview</a>
+          </li>
+          <li>
+            <a href="transactions.html">Transactions</a>
+          </li>
+          <li>
+            <a href="budgets.html">Budgets</a>
+          </li>
+          <li>
+            <a href="goals.html">Goals</a>
+          </li>
+          <li>
+            <a href="reports.html">Reports</a>
+          </li>
+          <li>
+            <a href="settings.html">Settings</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="user-info">
+        <div class="user-avatar" onclick="window.location.href='profile.html'">
+          <img src="/placeholder.svg?height=40&width=40" alt="User Avatar" id="user-avatar-small">
+        </div>
+        <div class="user-details">
+          <p class="user-name" id="user-name-sidebar"></p>
+          <a href="index.html" class="logout-link">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation -->
+      <header class="top-nav">
+        <div class="mobile-toggle" onclick="toggleSidebar()">
+          <span>☰</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" placeholder="Search...">
+        </div>
+        <div class="top-nav-actions">
+          <a href="notifications.html" class="btn-icon">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge" id="notification-count"></span>
+          </a>
+          <a href="profile.html" class="btn-icon">
+            <span class="profile-icon">👤</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Profile Content -->
+      <div class="dashboard-content">
+        <h1>User Profile</h1>
+        
+        <div class="profile-container" id="profile-container">
+          <!-- Profile content will be loaded dynamically -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Load user data
+    function loadUserData() {
+      const user = DataManager.getUser();
+      document.getElementById('user-name-sidebar').textContent = user.name;
+      document.getElementById('user-avatar-small').src = user.avatar;
+      
+      // Load profile container
+      const profileContainer = document.getElementById('profile-container');
+      
+      // Get stats
+      const transactions = DataManager.getTransactions();
+      const budgets = DataManager.getBudgets();
+      const goals = DataManager.getGoals();
+      
+      profileContainer.innerHTML = `
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <img src="${user.avatar}" alt="User Avatar" id="user-avatar-large">
+            <button class="change-avatar-btn" onclick="changeAvatar()">Change</button>
+          </div>
+          <div class="profile-info">
+            <h3>${user.name}</h3>
+            <p>${user.email}</p>
+            <p>Member since: ${user.memberSince}</p>
+          </div>
+        </div>
+        
+        <div class="profile-stats">
+          <div class="stat-item">
+            <span class="stat-value">${transactions.length}</span>
+            <span class="stat-label">Transactions</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">${budgets.length}</span>
+            <span class="stat-label">Budgets</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">${goals.length}</span>
+            <span class="stat-label">Goals</span>
+          </div>
+        </div>
+        
+        <div class="profile-actions">
+          <a href="settings.html" class="edit-profile-btn">Edit Profile</a>
+          <a href="index.html" class="logout-btn">Logout</a>
+        </div>
+      `;
+    }
+
+    // Change avatar
+    function changeAvatar() {
+      // In a real app, you would open a file picker and upload a new avatar
+      alert('In a real app, this would open a file picker to upload a new avatar.');
+    }
+
+    // Load notification count
+    function loadNotificationCount() {
+      const notifications = DataManager.getNotifications();
+      const unreadCount = notifications.filter(n => !n.read).length;
+      
+      const notificationCountElement = document.getElementById('notification-count');
+      
+      if (unreadCount > 0) {
+        notificationCountElement.textContent = unreadCount;
+        notificationCountElement.style.display = 'flex';
+      } else {
+        notificationCountElement.style.display = 'none';
+      }
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUserData();
+      loadNotificationCount();
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinTrack - Dashboard</title>
+  <link rel="stylesheet" href="dashboard-styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+  <script src="data-manager.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <h2>FinTrack</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li class="active">
+            <a href="dashboard.html">Overview</a>
+          </li>
+          <li>
+            <a href="transactions.html">Transactions</a>
+          </li>
+          <li>
+            <a href="budgets.html">Budgets</a>
+          </li>
+          <li>
+            <a href="goals.html">Goals</a>
+          </li>
+          <li>
+            <a href="reports.html">Reports</a>
+          </li>
+          <li>
+            <a href="settings.html">Settings</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="user-info">
+        <div class="user-avatar" onclick="window.location.href='profile.html'">
+          <img src="avatar.jpg" alt="User Avatar" id="user-avatar-small">
+        </div>
+        <div class="user-details">
+          <p class="user-name" id="user-name-sidebar"></p>
+          <a href="index.html" class="logout-link">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation -->
+      <header class="top-nav">
+        <div class="mobile-toggle" onclick="toggleSidebar()">
+          <span>☰</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" placeholder="Search...">
+        </div>
+        <div class="top-nav-actions">
+          <a href="notifications.html" class="btn-icon">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge" id="notification-count"></span>
+          </a>
+          <a href="profile.html" class="btn-icon">
+            <span class="profile-icon">👤</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <div class="dashboard-content">
+        <h1>Financial Overview</h1>
+        
+        <div class="summary-cards" id="summary-cards">
+          <!-- Summary cards will be loaded dynamically -->
+        </div>
+
+        <div class="chart-container">
+          <h2>Monthly Spending</h2>
+          <canvas id="spendingChart"></canvas>
+        </div>
+
+        <div class="recent-transactions">
+          <h2>Recent Transactions</h2>
+          <div class="transaction-list" id="recent-transactions-list">
+            <!-- Recent transactions will be loaded dynamically -->
+          </div>
+          <a href="transactions.html" class="view-all-btn">View All Transactions</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Load user data
+    function loadUserData() {
+      const user = DataManager.getUser();
+      document.getElementById('user-name-sidebar').textContent = user.name;
+      document.getElementById('user-avatar-small').src = user.avatar;
+    }
+
+    // Load financial summary
+    function loadFinancialSummary() {
+      const summary = DataManager.getFinancialSummary();
+      const summaryCardsContainer = document.getElementById('summary-cards');
+      
+      summaryCardsContainer.innerHTML = `
+        <div class="card">
+          <h3>Total Balance</h3>
+          <p class="amount">${DataManager.formatCurrency(summary.balance)}</p>
+          <p class="trend positive">↑ 2.4%</p>
+        </div>
+        <div class="card">
+          <h3>Income</h3>
+          <p class="amount">${DataManager.formatCurrency(summary.income)}</p>
+          <p class="trend positive">↑ 4.1%</p>
+        </div>
+        <div class="card">
+          <h3>Expenses</h3>
+          <p class="amount">${DataManager.formatCurrency(summary.expenses)}</p>
+          <p class="trend negative">↑ 1.8%</p>
+        </div>
+        <div class="card">
+          <h3>Savings</h3>
+          <p class="amount">${DataManager.formatCurrency(summary.savings)}</p>
+          <p class="trend positive">↑ 10.3%</p>
+        </div>
+      `;
+    }
+
+    // Load recent transactions
+    function loadRecentTransactions() {
+      const transactions = DataManager.getRecentTransactions();
+      const transactionsList = document.getElementById('recent-transactions-list');
+      
+      transactionsList.innerHTML = '';
+      
+      if (transactions.length === 0) {
+        transactionsList.innerHTML = '<p class="no-data">No transactions found.</p>';
+        return;
+      }
+      
+      transactions.forEach(transaction => {
+        const transactionItem = document.createElement('div');
+        transactionItem.className = 'transaction-item';
+        
+        transactionItem.innerHTML = `
+          <div class="transaction-icon ${transaction.category}">
+            <span>${transaction.icon}</span>
+          </div>
+          <div class="transaction-details">
+            <h4>${transaction.description}</h4>
+            <p>${transaction.formattedDate} • ${transaction.category}</p>
+          </div>
+          <div class="transaction-amount ${transaction.amount < 0 ? 'negative' : ''}">
+            ${DataManager.formatCurrency(transaction.amount)}
+          </div>
+        `;
+        
+        transactionsList.appendChild(transactionItem);
+      });
+    }
+
+    // Load notification count
+    function loadNotificationCount() {
+      const notifications = DataManager.getNotifications();
+      const unreadCount = notifications.filter(n => !n.read).length;
+      
+      const notificationCountElement = document.getElementById('notification-count');
+      
+      if (unreadCount > 0) {
+        notificationCountElement.textContent = unreadCount;
+        notificationCountElement.style.display = 'flex';
+      } else {
+        notificationCountElement.style.display = 'none';
+      }
+    }
+
+    // Initialize spending chart
+    function initSpendingChart() {
+      const ctx = document.getElementById('spendingChart').getContext('2d');
+      
+      // Get financial data for the last 6 months
+      const summary = DataManager.getFinancialSummary();
+      
+      // Sample data for the chart
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+      const expensesData = [1250, 1500, 1320, 1800, 1650, summary.expenses];
+      const incomeData = [2800, 2800, 3000, 3200, 3200, summary.income];
+      
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Expenses',
+            backgroundColor: '#e74c3c',
+            data: expensesData
+          }, {
+            label: 'Income',
+            backgroundColor: '#27ae60',
+            data: incomeData
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            yAxes: [{
+              ticks: {
+                beginAtZero: true,
+                callback: function(value) {
+                  return DataManager.formatCurrency(value);
+                }
+              }
+            }]
+          },
+          tooltips: {
+            callbacks: {
+              label: function(tooltipItem, data) {
+                const label = data.datasets[tooltipItem.datasetIndex].label || '';
+                const value = tooltipItem.yLabel;
+                return label + ': ' + DataManager.formatCurrency(value);
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Initialize the dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUserData();
+      loadFinancialSummary();
+      loadRecentTransactions();
+      loadNotificationCount();
+      initSpendingChart();
+    });
+  </script>
+</body>
+</html>
+

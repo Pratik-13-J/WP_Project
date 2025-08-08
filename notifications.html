@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FinTrack - Notifications</title>
+  <link rel="stylesheet" href="dashboard-styles.css">
+  <script src="data-manager.js"></script>
+</head>
+<body>
+  <div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="logo">
+        <h2>FinTrack</h2>
+      </div>
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <a href="dashboard.html">Overview</a>
+          </li>
+          <li>
+            <a href="transactions.html">Transactions</a>
+          </li>
+          <li>
+            <a href="budgets.html">Budgets</a>
+          </li>
+          <li>
+            <a href="goals.html">Goals</a>
+          </li>
+          <li>
+            <a href="reports.html">Reports</a>
+          </li>
+          <li>
+            <a href="settings.html">Settings</a>
+          </li>
+        </ul>
+      </nav>
+      <div class="user-info">
+        <div class="user-avatar" onclick="window.location.href='profile.html'">
+          <img src="/placeholder.svg?height=40&width=40" alt="User Avatar" id="user-avatar-small">
+        </div>
+        <div class="user-details">
+          <p class="user-name" id="user-name-sidebar"></p>
+          <a href="index.html" class="logout-link">Logout</a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation -->
+      <header class="top-nav">
+        <div class="mobile-toggle" onclick="toggleSidebar()">
+          <span>☰</span>
+        </div>
+        <div class="search-bar">
+          <input type="text" placeholder="Search notifications..." id="notification-search" onkeyup="filterNotifications()">
+        </div>
+        <div class="top-nav-actions">
+          <a href="notifications.html" class="btn-icon">
+            <span class="notification-icon">🔔</span>
+            <span class="notification-badge" id="notification-count"></span>
+          </a>
+          <a href="profile.html" class="btn-icon">
+            <span class="profile-icon">👤</span>
+          </a>
+        </div>
+      </header>
+
+      <!-- Notifications Content -->
+      <div class="dashboard-content">
+        <h1>Notifications</h1>
+        
+        <div class="notifications-container">
+          <div class="notifications-list" id="notifications-list">
+            <!-- Notifications will be loaded dynamically -->
+          </div>
+          
+          <button class="mark-all-read-btn" onclick="markAllAsRead()" id="mark-all-read-btn">Mark all as read</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Global variables
+    let currentNotifications = [];
+
+    // Load user data
+    function loadUserData() {
+      const user = DataManager.getUser();
+      document.getElementById('user-name-sidebar').textContent = user.name;
+      document.getElementById('user-avatar-small').src = user.avatar;
+    }
+
+    // Load notifications
+    function loadNotifications() {
+      currentNotifications = DataManager.getNotifications();
+      renderNotifications();
+      updateNotificationCount();
+    }
+
+    // Render notifications
+    function renderNotifications() {
+      const notificationsList = document.getElementById('notifications-list');
+      notificationsList.innerHTML = '';
+      
+      if (currentNotifications.length === 0) {
+        notificationsList.innerHTML = '<p class="no-data">No notifications at this time.</p>';
+        document.getElementById('mark-all-read-btn').style.display = 'none';
+        return;
+      }
+      
+      // Check if there are any unread notifications
+      const hasUnread = currentNotifications.some(notification => !notification.read);
+      document.getElementById('mark-all-read-btn').style.display = hasUnread ? 'block' : 'none';
+      
+      currentNotifications.forEach(notification => {
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${notification.read ? '' : 'unread'}`;
+        
+        notificationItem.innerHTML = `
+          <div class="notification-icon ${notification.type}">
+            <span>${notification.icon}</span>
+          </div>
+          <div class="notification-content">
+            <p>${notification.message}</p>
+            <span class="notification-time">${notification.time}</span>
+          </div>
+          ${notification.read ? '' : `<button class="mark-read-btn" onclick="markAsRead(${notification.id})">Mark as read</button>`}
+        `;
+        
+        notificationsList.appendChild(notificationItem);
+      });
+    }
+
+    // Filter notifications
+    function filterNotifications() {
+      const searchFilter = document.getElementById('notification-search').value.toLowerCase();
+      
+      const allNotifications = DataManager.getNotifications();
+      
+      currentNotifications = allNotifications.filter(notification => {
+        // Filter by search
+        if (searchFilter) {
+          const message = notification.message.toLowerCase();
+          
+          if (!message.includes(searchFilter)) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+      
+      renderNotifications();
+    }
+
+    // Mark notification as read
+    function markAsRead(id) {
+      DataManager.markNotificationAsRead(id);
+      loadNotifications();
+    }
+
+    // Mark all notifications as read
+    function markAllAsRead() {
+      DataManager.markAllNotificationsAsRead();
+      loadNotifications();
+    }
+
+    // Update notification count
+    function updateNotificationCount() {
+      const unreadCount = currentNotifications.filter(n => !n.read).length;
+      
+      const notificationCountElement = document.getElementById('notification-count');
+      
+      if (unreadCount > 0) {
+        notificationCountElement.textContent = unreadCount;
+        notificationCountElement.style.display = 'flex';
+      } else {
+        notificationCountElement.style.display = 'none';
+      }
+    }
+
+    // Toggle sidebar on mobile
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+    }
+
+    // Initialize the page
+    document.addEventListener('DOMContentLoaded', function() {
+      loadUserData();
+      loadNotifications();
+    });
+  </script>
+</body>
+</html>
+

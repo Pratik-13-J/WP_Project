@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="financeApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinTrack - Personal Finance Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+</head>
+<body ng-controller="MainController">
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>FinTrack</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+            <div class="auth-buttons">
+                <button class="login-btn" ng-click="showLoginModal()">Login</button>
+                <button class="signup-btn" ng-click="showSignupModal()">Sign Up</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Take Control of Your Finances</h1>
+                <p>Track, analyze, and optimize your personal finances with our powerful yet simple tools.</p>
+                <button class="cta-btn" ng-click="showSignupModal()">Get Started - It's Free</button>
+            </div>
+            <div class="hero-image">
+                <img src="/placeholder.svg?height=400&width=500" alt="Financial dashboard preview">
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Features</h2>
+            <div class="features-grid">
+                <div class="feature-card" ng-repeat="feature in features">
+                    <div class="feature-icon">
+                        <img ng-src="{{feature.icon}}" alt="{{feature.title}} icon">
+                    </div>
+                    <h3>{{feature.title}}</h3>
+                    <p>{{feature.description}}</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="container">
+            <h2>Why Choose FinTrack?</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>FinTrack is designed to help you achieve financial freedom through better money management. Our platform provides:</p>
+                    <ul>
+                        <li>Real-time tracking of income and expenses</li>
+                        <li>Customizable budgeting tools</li>
+                        <li>Insightful reports and analytics</li>
+                        <li>Goal setting and progress tracking</li>
+                        <li>Bank-level security for your financial data</li>
+                    </ul>
+                    <p>Whether you're saving for a home, planning for retirement, or just want to know where your money goes, FinTrack has you covered.</p>
+                </div>
+                <div class="about-image">
+                    <img src="/placeholder.svg?height=300&width=400" alt="Person using FinTrack">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="pricing" class="pricing">
+        <div class="container">
+            <h2>Simple, Transparent Pricing</h2>
+            <div class="pricing-plans">
+                <div class="plan" ng-repeat="plan in pricingPlans">
+                    <h3>{{plan.name}}</h3>
+                    <div class="price">{{plan.price}}</div>
+                    <ul class="plan-features">
+                        <li ng-repeat="feature in plan.features">{{feature}}</li>
+                    </ul>
+                    <button class="plan-btn" ng-click="selectPlan(plan)">Choose Plan</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Have Questions?</h2>
+            <p>Our team is here to help you get the most out of FinTrack.</p>
+            <div class="contact-form">
+                <form ng-submit="submitContactForm()">
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" ng-model="contactForm.name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" ng-model="contactForm.email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" ng-model="contactForm.message" required></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <h2>FinTrack</h2>
+                    <p>Your personal finance companion</p>
+                </div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h3>Product</h3>
+                        <ul>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#pricing">Pricing</a></li>
+                            <li><a href="#">FAQ</a></li>
+                        </ul>
+                    </div>
+                    <div class="link-group">
+                        <h3>Company</h3>
+                        <ul>
+                            <li><a href="#about">About Us</a></li>
+                            <li><a href="#contact">Contact</a></li>
+                            <li><a href="#">Careers</a></li>
+                        </ul>
+                    </div>
+                    <div class="link-group">
+                        <h3>Legal</h3>
+                        <ul>
+                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="#">Terms of Service</a></li>
+                            <li><a href="#">Security</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 FinTrack. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div class="modal" ng-show="modals.login">
+        <div class="modal-content">
+            <span class="close" ng-click="closeModals()">&times;</span>
+            <h2>Login to Your Account</h2>
+            <form ng-submit="login()">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" ng-model="loginForm.email" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" ng-model="loginForm.password" required>
+                </div>
+                <div class="form-actions">
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                    <button type="submit" class="submit-btn">Login</button>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <p>Don't have an account? <a href="#" ng-click="switchToSignup()">Sign up</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal" ng-show="modals.signup">
+        <div class="modal-content">
+            <span class="close" ng-click="closeModals()">&times;</span>
+            <h2>Create Your Account</h2>
+            <form ng-submit="signup()">
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" ng-model="signupForm.name" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" ng-model="signupForm.email" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" ng-model="signupForm.password" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm">Confirm Password</label>
+                    <input type="password" id="signup-confirm" ng-model="signupForm.confirmPassword" required>
+                </div>
+                <button type="submit" class="submit-btn">Create Account</button>
+            </form>
+            <div class="modal-footer">
+                <p>Already have an account? <a href="#" ng-click="switchToLogin()">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
